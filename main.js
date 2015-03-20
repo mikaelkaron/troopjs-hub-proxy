@@ -3,8 +3,8 @@
  */
 define([
 	"./version",
-  "./emitter",
-  "./component"
+	"./emitter",
+	"./component"
 ], function (version) {
 	return version;
 });
