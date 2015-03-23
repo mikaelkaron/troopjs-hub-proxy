@@ -6,10 +6,9 @@
     "bower_components"
   ],
   "dependencies": {
-    "troopjs-core": "^6",
-    "poly": "^0.6",
+    "troopjs-core": "^6.0.1",
     "when": "^3.4",
-    "mu-merge": "^0"
+    "mu-merge": "^0.0.2"
   },
   "devDependencies": {
     "requirejs": "^2.1"
