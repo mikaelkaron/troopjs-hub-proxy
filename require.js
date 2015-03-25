@@ -3,9 +3,9 @@
  */
 /*globals require:false*/
 require({
-	"baseUrl": "bower_components",
-	"packages": [{
-		"name": "troopjs-hub",
-		"location": ".."
-	}]
+  "baseUrl": "bower_components",
+  "packages": [ {
+    "name": "troopjs-hub",
+    "location": ".."
+  } ]
 });
