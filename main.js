@@ -2,9 +2,11 @@
  * @license MIT http://troopjs.mit-license.org/
  */
 define([
-	"./version",
-	"./emitter",
-	"./component"
+  "./version",
+  "./emitter",
+  "./component"
 ], function (version) {
-	return version;
+  "use strict";
+
+  return version;
 });
