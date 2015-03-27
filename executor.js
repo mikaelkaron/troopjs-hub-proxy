@@ -65,8 +65,8 @@ define([
         // Let `_scope` be `handler[SCOPE]`
         var _scope = _handler[SCOPE];
 
-        // Return early if `_scope[PHASE]` matches a blocked phase
-        if (_scope !== UNDEFINED && SKIP.test(_scope[PHASE])) {
+        // Return early if `_scope[PHASE]` is missing or matches a skipped phase
+        if (_scope === UNDEFINED || !_scope.hasOwnProperty(PHASE) || SKIP.test(_scope[PHASE])) {
           return current;
         }
 
