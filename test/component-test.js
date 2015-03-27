@@ -2,8 +2,9 @@ define([
   "buster",
   "../component",
   "../emitter",
-  "troopjs-core/component/signal/start"
-], function (buster, Gadget, emitter, start) {
+  "troopjs-core/component/signal/start",
+  "troopjs-core/component/signal/finalize"
+], function (buster, Gadget, emitter, start, finalize) {
   "use strict";
 
   var assert = buster.referee.assert;
@@ -27,6 +28,25 @@ define([
   }
 
   buster.testCase("troopjs-hub/component", {
+    "empty phase is protected": function () {
+      var spy = this.spy();
+      var component = Gadget.create();
+
+      component.on("hub/foo/bar", spy);
+
+      return emitter
+        .emit("foo/bar", 1, true, "test")
+        .tap(function () {
+          refute.called(spy);
+        })
+        .tap(function () {
+          return start.call(component)
+        })
+        .tap(function () {
+          return finalize.call(component);
+        });
+    },
+
     "publish/subscribe": {
       "setUp": function () {
         var me = this;
