@@ -24,7 +24,7 @@ define([
           refute.called(spy);
         })
         .tap(function () {
-          return start.call(component)
+          return start.call(component);
         })
         .tap(function () {
           return finalize.call(component);
@@ -64,7 +64,7 @@ define([
 
       return start.call(component)
         .tap(function () {
-          return emitter.emit("foo/bar", 1, true, "test")
+          return emitter.emit("foo/bar", 1, true, "test");
         })
         .tap(function () {
           assert.calledOnceWith(spy, 1, true, "test");
@@ -101,7 +101,7 @@ define([
 
       return start.call(component)
         .tap(function () {
-          return emitter.emit("foo/bar")
+          return emitter.emit("foo/bar");
         })
         .tap(function () {
           assert.calledOnce(spy);
@@ -141,6 +141,26 @@ define([
         .tap(function () {
           component.on("hub/foo/bar", spy, true);
           assert.calledOnceWith(spy, 1, true, "test");
+        })
+        .tap(function () {
+          return finalize.call(component);
+        });
+    },
+
+    "dynamic subscribe and unsubscribe with memory before start": function () {
+      var spy = this.spy();
+      var component = Component.create();
+
+      component.on("hub/foo/bar", spy, true);
+      component.off("hub/foo/bar", spy);
+
+      return emitter
+        .emit("foo/bar", 1, true, "test")
+        .tap(function () {
+          return start.call(component);
+        })
+        .tap(function () {
+          refute.called(spy);
         })
         .tap(function () {
           return finalize.call(component);

@@ -5,9 +5,8 @@ define([
   "troopjs-core/component/emitter",
   "./config",
   "./emitter",
-  "./executor",
   "when/when"
-], function (Emitter, config, emitter, executor, when) {
+], function (Emitter, config, emitter, when) {
   "use strict";
 
   /**
@@ -21,9 +20,7 @@ define([
   var UNDEFINED;
   var NULL = null;
   var TRUE = true;
-  var EXECUTOR = config.emitter.executor;
-  var SCOPE = config.emitter.scope;
-  var CALLBACK = config.emitter.callback;
+  var DATA = config.emitter.data;
   var ARGS = "args";
   var NAME = "name";
   var TYPE = "type";
@@ -38,14 +35,14 @@ define([
    */
 
   /**
-   * @handler sig/add
+   * @handler sig/added
    * @localdoc Registers subscription on the {@link hub.emitter hub emitter} for matching callbacks
    * @inheritdoc
    */
 
   /**
-   * @handler sig/remove
-   * @localdoc Removes remote subscription from the {@link hub.emitter hub emitter} that was previously registered in {@link #handler-sig/add}
+   * @handler sig/removed
+   * @localdoc Removes remote subscription from the {@link hub.emitter hub emitter} that was previously registered in {@link #handler-sig/added}
    * @inheritdoc
    */
 
@@ -58,64 +55,53 @@ define([
     var memorized = [];
 
     // Intercept added handlers
-    me.on("sig/added", function (handlers, type, callback, data) {
+    me.on("sig/added", function (handlers, handler) {
+      var _empty = {};
       var _matches;
       var _type;
-      var _callback;
       var _memory;
-      var _empty = {};
 
-      // If we've added a HUB callback ...
-      if ((_matches = RE.exec(type)) !== NULL) {
+      // If we've added a HUB handler ...
+      if ((_matches = RE.exec(handler[TYPE])) !== NULL) {
         // Let `_type` be `_matches[1]`
         _type = _matches[1];
 
-        // Let `_callback` be `{}` and initialize
-        _callback = {};
-        _callback[SCOPE] = me;
-        _callback[TYPE] = type;
-        _callback[CALLBACK] = callback;
-        _callback[EXECUTOR] = executor;
-        _callback[HUB] = _type;
+        // Let `handler[HUB]` be `_type`
+        handler[HUB] = _type;
 
         // Subscribe to the hub
-        emitter.on(_type, _callback);
+        emitter.on(_type, handler);
 
         // If re-emit was requested ...
-        if (data === TRUE) {
+        if (handler[DATA] === TRUE) {
           // If memorization is "open"
           if (memorized !== UNDEFINED) {
-            memorized.push(_callback);
+            memorized.push(handler);
           }
           // .. otherwise try to `emit` if `emitter` memory for `_type` is not `_empty`
           else if ((_memory = emitter.peek(_type, _empty)) !== _empty) {
-            me.emit.apply(me, [ _callback ].concat(_memory));
+            me.emit.apply(me, [ handler ].concat(_memory));
           }
         }
       }
     });
 
     // Intercept removed handlers
-    me.on("sig/removed", function (handlers, type, callback, data) {
+    me.on("sig/removed", function (handlers, handler) {
       var _matches;
-      var _callback;
 
       // If we've removed a HUB callback ...
-      if ((_matches = RE.exec(type)) !== NULL) {
-        // Let `_callback` be `{}` and initialize
-        _callback = {};
-        _callback[SCOPE] = me;
-        _callback[CALLBACK] = callback;
+      if ((_matches = RE.exec(handler[TYPE])) !== NULL) {
 
         // Unsubscribe from the hub
-        emitter.off(_matches[1], _callback);
+        emitter.off(_matches[1], handler);
 
         // If re-emit was requested and there are `memorized` callbacks ...
-        if (data === TRUE && memorized !== UNDEFINED) {
+        if (handler[DATA] === TRUE && memorized !== UNDEFINED) {
           // TODO in place filtering for performance
-          // Filter matching `__callback`
-          memorized = memorized.filter(function (__callback) {
-            return __callback[TYPE] !== type && __callback[SCOPE] !== me && __callback[CALLBACK] !== callback;
+          // Filter matching `_handler`
+          memorized = memorized.filter(function (_handler) {
+            return _handler !== handler;
           });
         }
       }
@@ -125,13 +111,13 @@ define([
     me.on("sig/start", function () {
       return when
         // Map `memorized` ...
-        .map(memorized, function (_callback) {
+        .map(memorized, function (_handler) {
           var _memory;
           var _empty = {};
 
-          // If `emitter` memory for `_callback[HUB]` is not `_empty` re-emit ...
-          return (_memory = emitter.peek(_callback[HUB], _empty)) !== _empty
-            ? me.emit.apply(me, [ _callback ].concat(_memory))
+          // If `emitter` memory for `_handler[HUB]` is not `_empty` re-emit ...
+          return (_memory = emitter.peek(_handler[HUB], _empty)) !== _empty
+            ? me.emit.apply(me, [ _handler ].concat(_memory))
             : UNDEFINED;
         })
         // ... and reset to `UNDEFINED`
