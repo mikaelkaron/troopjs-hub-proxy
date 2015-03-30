@@ -1,14 +1,11 @@
 define([
   "buster",
   "../emitter",
-  "when/when",
-  "when/delay"
-], function (buster, emitter, when, delay) {
+  "when/when"
+], function (buster, emitter, when) {
   "use strict";
 
-  var UNDEFINED;
   var assert = buster.referee.assert;
-  var refute = buster.referee.refute;
 
   buster.testCase("troopjs-hub/emitter", {
     "setUp": function () {
@@ -19,80 +16,97 @@ define([
       var foo = "FOO";
       var bar = "BAR";
 
-      emitter.on("foo/bar", function (arg) {
-        assert.same(foo, arg);
-        // Return an array.
+      var spy1 = this.spy(function (arg) {
         return [ arg, bar ];
       });
-      emitter.on("foo/bar", function (arg1, arg2) {
-        assert.same(foo, arg1);
-        assert.same(bar, arg2);
-        // Return no value.
-      });
-      emitter.on("foo/bar", function (arg1, arg2) {
-        // Arguments received are to be same as the previous one.
-        assert.same(foo, arg1);
-        assert.same(bar, arg2);
-
-        // Return array-like arguments
+      var spy2 = this.spy();
+      var spy3 = this.spy(function () {
         return arguments;
       });
-      emitter.on("foo/bar", function (arg1, arg2) {
-        // Arguments received are to be same as the previous one.
-        assert.same(foo, arg1);
-        assert.same(bar, arg2);
-
-        // Return a single value.
+      var spy4 = this.spy(function (arg1) {
         return arg1;
       });
-      emitter.on("foo/bar", function (arg1, arg2) {
-        assert.same(foo, arg1);
-        refute.defined(arg2);
-      });
-      return emitter.emit("foo/bar", foo);
+      var spy5 = this.spy();
+
+      emitter.on("foo/bar", spy1);
+      emitter.on("foo/bar", spy2);
+      emitter.on("foo/bar", spy3);
+      emitter.on("foo/bar", spy4);
+      emitter.on("foo/bar", spy5);
+
+      return emitter
+        .emit("foo/bar", foo)
+        .tap(function () {
+          assert.calledOnce(spy1);
+          assert.calledOnce(spy2);
+          assert.calledOnce(spy3);
+          assert.calledOnce(spy4);
+          assert.calledOnce(spy5);
+          assert.calledWithExactly(spy1, foo);
+          assert.calledWithExactly(spy2, foo, bar);
+          assert.calledWithExactly(spy3, foo, bar);
+          assert.calledWithExactly(spy4, foo, bar);
+          assert.calledWithExactly(spy5, foo);
+        });
     },
 
     "subscribe/publish async subscribers": function () {
       var foo = "FOO";
       var bar = "BAR";
 
-      emitter.on("foo/bar", function (arg) {
-        assert.same(foo, arg);
+      var spy1 = this.spy(function (arg) {
         return when.resolve([ arg, bar ]);
       });
-      emitter.on("foo/bar", function (arg1, arg2) {
-        assert.same(foo, arg1);
-        assert.same(bar, arg2);
-        return delay(200, [ bar ]);
+      var spy2 = this.spy(function () {
+        return when.resolve();
       });
-      emitter.on("foo/bar", function (arg1) {
-        assert.same(bar, arg1);
-        // Return a promise that resolves to no value.
-        return delay(200, foo);
+      var spy3 = this.spy(function () {
+        return when.resolve(arguments);
       });
-      emitter.on("foo/bar", function (arg1, arg2) {
-        assert.same(foo, arg1);
-        refute.defined(arg2);
+      var spy4 = this.spy(function (arg1) {
+        return when.resolve(arg1);
+      });
+      var spy5 = this.spy();
 
-        // Return a promise that resolves to no value.
-        return delay(200, UNDEFINED);
-      });
-      emitter.on("foo/bar", function (arg1, arg2) {
-        // Arguments received are to be same as the previous one.
-        assert.same(foo, arg1);
-        refute.defined(arg2);
-      });
-      return emitter.emit("foo/bar", foo);
+      emitter.on("foo/bar", spy1);
+      emitter.on("foo/bar", spy2);
+      emitter.on("foo/bar", spy3);
+      emitter.on("foo/bar", spy4);
+      emitter.on("foo/bar", spy5);
+
+      return emitter
+        .emit("foo/bar", foo)
+        .tap(function () {
+          assert.calledOnce(spy1);
+          assert.calledOnce(spy2);
+          assert.calledOnce(spy3);
+          assert.calledOnce(spy4);
+          assert.calledOnce(spy5);
+          assert.calledWithExactly(spy1, foo);
+          assert.calledWithExactly(spy2, foo, bar);
+          assert.calledWithExactly(spy3, foo, bar);
+          assert.calledWithExactly(spy4, foo, bar);
+          assert.calledWithExactly(spy5, foo);
+        });
     },
 
     "bug out in first hub subscriber": function () {
       var err = new Error("bug out");
-      emitter.on("foo/bar", function () {
+      var spy = this.spy(function () {
         throw err;
       });
-      return emitter.emit("foo/bar").otherwise(function (error) {
-        assert.same(error, err);
-      });
+
+      emitter.on("foo/bar", spy);
+
+      return emitter
+        .emit("foo/bar")
+        .then(function () {
+          assert.called(spy);
+          assert.threw(spy, err);
+        })
+        .otherwise(function (error) {
+          assert.same(error, err);
+        });
     },
 
     "tearDown": function () {
