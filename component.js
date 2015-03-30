@@ -37,13 +37,13 @@ define([
   /**
    * @handler sig/added
    * @localdoc Registers subscription on the {@link hub.emitter hub emitter} for matching callbacks
-   * @inheritdoc
+   * @inheritdoc #event-sig/added
    */
 
   /**
    * @handler sig/removed
    * @localdoc Removes remote subscription from the {@link hub.emitter hub emitter} that was previously registered in {@link #handler-sig/added}
-   * @inheritdoc
+   * @inheritdoc #event-sig/removed
    */
 
   /**
