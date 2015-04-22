@@ -25,6 +25,7 @@ define([
   var NAME = "name";
   var TYPE = "type";
   var VALUE = "value";
+  var LENGTH = "length";
   var HUB = "hub";
   var RE = new RegExp("^" + HUB + "/(.+)");
 
@@ -60,6 +61,7 @@ define([
       var _matches;
       var _type;
       var _memory;
+      var _data;
 
       // If we've added a HUB handler ...
       if ((_matches = RE.exec(handler[TYPE])) !== NULL) {
@@ -73,7 +75,7 @@ define([
         emitter.on(_type, handler);
 
         // If re-emit was requested ...
-        if (handler[DATA] === TRUE) {
+        if ((_data = handler[DATA]) !== UNDEFINED && _data[0] === TRUE) {
           // If memorization is "open"
           if (memorized !== UNDEFINED) {
             memorized.push(handler);
@@ -89,6 +91,7 @@ define([
     // Intercept removed handlers
     me.on("sig/removed", function (handlers, handler) {
       var _matches;
+      var _data;
 
       // If we've removed a HUB callback ...
       if ((_matches = RE.exec(handler[TYPE])) !== NULL) {
@@ -97,7 +100,7 @@ define([
         emitter.off(_matches[1], handler);
 
         // If re-emit was requested and there are `memorized` callbacks ...
-        if (handler[DATA] === TRUE && memorized !== UNDEFINED) {
+        if ((_data = handler[DATA]) !== UNDEFINED && _data[0] === TRUE && memorized !== UNDEFINED) {
           // TODO in place filtering for performance
           // Filter matching `_handler`
           memorized = memorized.filter(function (_handler) {
@@ -140,7 +143,14 @@ define([
 
       if (specials.hasOwnProperty(HUB)) {
         specials[HUB].forEach(function (special) {
-          me.on(special[NAME], special[VALUE], special[ARGS][0]);
+          var args;
+
+          if ((args = special[ARGS]) !== UNDEFINED && args[LENGTH] > 0) {
+            me.on.apply(me, [ special[NAME], special[VALUE] ].concat(special[ARGS]));
+          }
+          else {
+            me.on(special[NAME], special[VALUE]);
+          }
         });
       }
     }
